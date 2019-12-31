@@ -50,7 +50,7 @@ class Save_adnmb:
             return
 
     def save_img(self,replyid,replyimg):
-        img_savepath = os.path.join(self.basepath,  self.tid)
+        img_savepath = os.path.join(self.basepath,  self.tid)   #解决不同系统路径问题
         if not os.path.exists(img_savepath):
             os.mkdir(img_savepath)
         if len(replyimg) > 0:   #判断是否有图片
