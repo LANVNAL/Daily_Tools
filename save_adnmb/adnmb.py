@@ -25,13 +25,15 @@ class Save_adnmb:
             print ("即将开始......")
 
     def get_pages(self):
+        print ("获取页数......")
         r = requests.get(self.url)
         data = r.text
         doc = pq(data)
         pagesdoc = doc.find('.uk-pagination-left').children()
-        pages = max(re.findall(r'\?page=([0-9])',str(pagesdoc)))
+        pages = max(list(map(int,re.findall(r'\?page=([0-9]*)',str(pagesdoc)))))
         self.pages = int(pages)
-
+        print ("页数为：{}".format(self.pages))
+        
     def get_po_id(self,id):
         if self.po == "po":
             self.po = id
@@ -86,3 +88,4 @@ if __name__ == "__main__":
     tid = input("请输入串号：")
     test = Save_adnmb(tid)
     test.saveee()
+    print ("完工 (*´ω`*)")    
