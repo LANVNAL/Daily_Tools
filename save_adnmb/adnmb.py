@@ -15,6 +15,7 @@ class Save_adnmb:
     def __init__(self, tid):
         self.tid = tid
         self.url = "https://adnmb2.com/t/" + str(tid) 
+        self.basepath = os.path.abspath(os.path.dirname(__file__))
     
     def test_tid(self):
         status = requests.get(self.url).status_code
@@ -47,6 +48,19 @@ class Save_adnmb:
         else:
             return
 
+    def save_img(self,replyid,replyimg):
+        print ("如果图片较多保存速度会慢一点")
+        img_savepath = self.basepath + "\\" + self.tid
+        if not os.path.exists(img_savepath):
+            os.mkdir(img_savepath)
+        if len(replyimg) > 0:   #判断是否有图片
+            imgsrc = re.findall(r'data-src=\"(.*?)\"',str(replyimg))[0]
+            with open(img_savepath +"\\{}.jpg".format(replyid),'wb') as f:
+                data = requests.get(imgsrc)
+                f.write(data.content)
+        else:
+            return
+
     def get_reply_data(self):
         for page in range(1,self.pages + 1):
             url = self.url + "?page=" + str(page)
@@ -60,14 +74,16 @@ class Save_adnmb:
                 replyuid = reply.find('.h-threads-info-uid').text()
                 replyid = reply.find('.h-threads-info-id').text()
                 replymsg = reply.find('.h-threads-content').text() 
-                self.save_to_txt(replytime,replyuid,replyid,replymsg)
+                replyimg = reply.find('.h-threads-img-box a .h-threads-img')
                 if page == 1:self.get_po_id(replyuid)
+                self.save_to_txt(replytime,replyuid,replyid,replymsg)
+                self.save_img(replyid,replyimg)                
+                #print (replyid,replyimg)
             
             print ("第{}页已保存".format(page))
 
     def save_to_txt(self,replytime,replyuid,replyid,replymsg):
-        basepath = os.path.abspath(os.path.dirname(__file__))
-        filename = basepath + "/" + str(self.tid) + ".txt"
+        filename = self.basepath + "/" + str(self.tid) + ".txt"
         if self.judge_po(replyuid) == "po":
             replyuid = replyuid + " (po)"
         with open (filename, 'a', encoding="utf-8") as savetxt:
