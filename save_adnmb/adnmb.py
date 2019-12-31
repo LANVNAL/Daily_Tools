@@ -27,6 +27,7 @@ class Save_adnmb:
 
     def get_pages(self):
         print ("获取页数......")
+        print ("如果图片较多保存速度会慢一点")
         r = requests.get(self.url)
         data = r.text
         doc = pq(data)
@@ -49,8 +50,7 @@ class Save_adnmb:
             return
 
     def save_img(self,replyid,replyimg):
-        print ("如果图片较多保存速度会慢一点")
-        img_savepath = self.basepath + "\\" + self.tid
+        img_savepath = os.path.join(self.basepath, "\\" + self.tid)
         if not os.path.exists(img_savepath):
             os.mkdir(img_savepath)
         if len(replyimg) > 0:   #判断是否有图片
@@ -83,7 +83,7 @@ class Save_adnmb:
             print ("第{}页已保存".format(page))
 
     def save_to_txt(self,replytime,replyuid,replyid,replymsg):
-        filename = self.basepath + "/" + str(self.tid) + ".txt"
+        filename = os.path.join(self.basepath, "/" + str(self.tid) + ".txt")
         if self.judge_po(replyuid) == "po":
             replyuid = replyuid + " (po)"
         with open (filename, 'a', encoding="utf-8") as savetxt:
