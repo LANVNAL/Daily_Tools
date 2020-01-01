@@ -16,6 +16,7 @@ class Save_adnmb:
         self.tid = tid
         self.url = "https://adnmb2.com/t/" + str(tid) 
         self.basepath = os.path.abspath(os.path.dirname(__file__))
+        self.savetype = "txt"
     
     def test_tid(self):
         status = requests.get(self.url).status_code
@@ -41,7 +42,6 @@ class Save_adnmb:
             self.po = id
         else:
             return
-
 
     def judge_po(self,id):
         if id == self.po:
@@ -76,8 +76,11 @@ class Save_adnmb:
                 replymsg = reply.find('.h-threads-content').text() 
                 replyimg = reply.find('.h-threads-img-box a .h-threads-img')
                 if page == 1:self.get_po_id(replyuid)
-                self.save_to_txt(replytime,replyuid,replyid,replymsg)
-                self.save_img(replyid,replyimg)                
+                if self.savetype == "txt":
+                    self.save_to_txt(replytime,replyuid,replyid,replymsg)
+                else:
+                    self.save_to_markdown(replytime,replyuid,replyid,replymsg,replyimg)    
+                self.save_img(replyid,replyimg)            
                 #print (replyid,replyimg)
             
             print ("第{}页已保存".format(page))
@@ -91,7 +94,23 @@ class Save_adnmb:
             savetxt.write(replymsg + '\n')
             savetxt.write("======================================================" + '\n')
 
-    def saveee(self):
+    def save_to_markdown(self,replytime,replyuid,replyid,replymsg,replyimg):
+        filename = os.path.join(self.basepath, str(self.tid) + ".md")
+        if self.judge_po(replyuid) == "po":
+            replyuid = replyuid + " (po)"
+        with open (filename, 'a', encoding="utf-8") as savemd:
+            savemd.write("> **" + replytime + "**\\" + "\n")
+            savemd.write("> " + replyuid + "&emsp;" + replyuid + "\n")
+            if len(replyimg) > 0:   #判断是否有图片
+                imgpath = "./{}/{}.jpg".format(self.tid,replyid)
+                savemd.write("\n" + "![]({})".format(imgpath) + "\n")
+            savemd.write("```" + "\n")
+            savemd.write(replymsg + "\n")
+            savemd.write("```" + "\n\n")
+
+
+    def saveee(self,savetype = "txt"):
+        self.savetype = savetype
         self.test_tid()
         self.get_pages()
         self.get_reply_data()
@@ -102,6 +121,9 @@ class Save_adnmb:
 
 if __name__ == "__main__":
     tid = input("请输入串号：")
-    test = Save_adnmb(tid)
-    test.saveee()
+    choicetype = input("请选择保存的文件类型(1-txt 2-markdown):")
+    save = Save_adnmb(tid)
+    if choicetype == "2":
+        savetype = "markdown"
+    save.saveee(savetype)
     print ("完工 (*´ω`*)")    
