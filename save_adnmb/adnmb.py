@@ -6,7 +6,7 @@
 
 import requests
 from pyquery import PyQuery as pq
-import re,os
+import re,os,sys
 
 class Save_adnmb:
     pages = 1
@@ -19,12 +19,17 @@ class Save_adnmb:
         self.savetype = "txt"
     
     def test_tid(self):
-        status = requests.get(self.url).status_code
-        if status != 200:
+        r = requests.get(self.url)
+        status = r.status_code
+        text = r.text
+        exist = text.find('<p class="error">该主题不存在</p>')
+        if status != 200 or exist != -1:
+            #返回200也有可能有误
             print ("串号有误，请检查")
-            exit()
+            return False
         else:
             print ("即将开始......")
+            return True
 
     def get_pages(self):
         print ("获取页数......")
@@ -32,6 +37,7 @@ class Save_adnmb:
         r = requests.get(self.url)
         data = r.text
         doc = pq(data)
+        self.current_page = data
         pagesdoc = doc.find('.uk-pagination-left').children()
         pages = max(list(map(int,re.findall(r'\?page=([0-9]*)',str(pagesdoc)))))
         self.pages = int(pages)
@@ -55,7 +61,7 @@ class Save_adnmb:
             os.mkdir(img_savepath)
         if len(replyimg) > 0:   #判断是否有图片
             imgsrc = re.findall(r'data-src=\"(.*?)\"',str(replyimg))[0]
-            with open(img_savepath +"\\{}.jpg".format(replyid),'wb') as f:
+            with open(os.path.join(img_savepath, "{}.jpg".format(replyid)),'wb') as f:
                 data = requests.get(imgsrc)
                 f.write(data.content)
         else:
@@ -67,6 +73,22 @@ class Save_adnmb:
             r = requests.get(url)
             data = r.text
             doc = pq(data)
+            #TODO:未保存正文
+            
+            maindoc = doc.find('.h-threads-item-main')
+            
+            maintime = maindoc.find('.h-threads-info-createdat').text()
+            mainuid = maindoc.find('.h-threads-info-uid').text()
+            mainid = maindoc.find('.h-threads-info-id').text()
+            mainmsg = maindoc.find('.h-threads-content').text() 
+            mainimg = maindoc.find('.h-threads-img-box a .h-threads-img')
+            
+            if self.savetype == "txt":
+                self.save_to_txt(maintime,mainuid,mainid,mainmsg)
+            else:
+                self.save_to_markdown(maintime,mainuid,mainid,mainmsg,mainimg)    
+            self.save_img(mainid,mainimg)
+            
             replydoc = doc.find('.h-threads-item-reply-main').items()
         
             for reply in replydoc:
@@ -111,19 +133,29 @@ class Save_adnmb:
 
     def saveee(self,savetype = "txt"):
         self.savetype = savetype
-        self.test_tid()
-        self.get_pages()
-        self.get_reply_data()
+        if self.test_tid():
+            self.get_pages()
+            self.get_reply_data()
+            print ("完工 (*´ω`*)")
 
     def test(self):
         self.get_reply_data()
 
 
 if __name__ == "__main__":
-    tid = input("请输入串号：")
-    choicetype = input("请选择保存的文件类型(1-txt 2-markdown):")
+    mode = 1
+    if(mode == 1):
+        tid = input("请输入串号：")
+        choicetype = input("请选择保存的文件类型(1-txt 2-markdown):")
+    else:
+        tid = 3
+        choicetype = 3
     save = Save_adnmb(tid)
-    if choicetype == "2":
+    if choicetype == "1":
+        savetype = "txt"
+    elif choicetype == "2":
         savetype = "markdown"
+    else:
+        print("类型不正确")
+        sys.exit(0)
     save.saveee(savetype)
-    print ("完工 (*´ω`*)")    
